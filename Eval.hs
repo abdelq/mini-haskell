@@ -28,7 +28,7 @@ data Exp = EInt Int
          | EVar Symbol
          | EApp Exp Exp
          | ELam Symbol Type Exp
-         deriving (Eq)
+         deriving (Show, Eq)
 
 data Value = VInt Int
            | VLam Symbol Exp Env
@@ -118,8 +118,17 @@ lookupVar (_ : xs) sym = lookupVar xs sym
 eval :: Env -> Exp -> Value
 eval _ (EInt x) = VInt x
 eval env (EVar sym) = lookupVar env sym
-eval _ _ = error "Oups ..."
 
+eval env (EApp exp1 exp2) =
+    let v1 = eval env exp1
+        v2 = eval env exp2
+     in case v1 of
+          VPrim prim -> prim v2
+          VLam sym exp env -> eval ((sym, v2) : env) exp
+
+eval env (ELam sym typ exp) = VLam sym exp env
+
+{-eval _ _ = error "eval"-}
 
 ---------------------------------------------------------------------------
 -- Fonction pour la vérification de type
@@ -139,4 +148,16 @@ lookupType (_ : xs) sym = lookupType xs sym
 typeCheck :: Tenv -> Exp -> Either Error Type
 typeCheck _ (EInt x) = Right TInt
 typeCheck env (EVar sym) = lookupType env sym
-typeCheck _ _ = error "Oups ..."
+
+typeCheck env (EApp exp1 exp2) = do
+    exp1Type <- typeCheck env exp1
+    exp2Type <- typeCheck env exp2
+    case exp1Type of
+      TArrow t1 t2 | t1 == exp2Type -> Right t2
+      _ -> Left "EApp"
+
+typeCheck env (ELam sym t1 exp) = do
+    t2 <- typeCheck ((sym, t1) : env) exp
+    return $ TArrow t1 t2
+
+{-typeCheck _ _ = error "typeCheck"-}
