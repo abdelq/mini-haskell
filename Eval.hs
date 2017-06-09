@@ -96,14 +96,19 @@ sexp2Exp (SList ((SSym "lambda") :
                  (SList []) :
                  _ :
                  [])) = Left "Syntax Error : No parameter"
-      
-sexp2Exp (SList (func : arg : [])) = do
+
+sexp2Exp (SList [func, arg]) = do
   func' <- sexp2Exp func
   arg' <- sexp2Exp arg
   return $ EApp func' arg'
-  
+
+sexp2Exp (SList lst) = do
+    init <- sexp2Exp (SList (init lst))
+    last <- sexp2Exp (last lst)
+    return $ EApp init last
+
 sexp2Exp _ = Left "Syntax Error : Ill formed Sexp"
-  
+
 
 ---------------------------------------------------------------------------
 -- Fonction d'évaluation
