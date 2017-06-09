@@ -85,17 +85,14 @@ sexp2Exp (SNum x) = Right $ EInt x
 sexp2Exp (SSym ident) | ident `elem` reservedKeywords
   = Left $ ident ++ " is a reserved keyword"
 sexp2Exp (SSym ident) = Right $ EVar ident
-sexp2Exp (SList ((SSym "lambda") :
-                 (SList ((SList ((SSym var) : t : [])) : [])) :
-                 body :
-                 [])) = do
+sexp2Exp (SList [SSym "lambda", SList [SList [SSym var, t]], body]) = do
   body' <- sexp2Exp body
   t' <- sexp2type t
   return $ ELam var t' body'
-sexp2Exp (SList ((SSym "lambda") :
-                 (SList []) :
-                 _ :
-                 [])) = Left "Syntax Error : No parameter"
+sexp2Exp (SList [SSym "lambda", SList (x : xs), body]) =
+    let body' = SList [SSym "lambda", SList xs, body]
+     in sexp2Exp (SList [SSym "lambda", SList [x], body'])
+sexp2Exp (SList [SSym "lambda", SList [], _]) = Left "Syntax Error : No parameter"
 
 sexp2Exp (SList [func, arg]) = do
   func' <- sexp2Exp func
@@ -107,7 +104,7 @@ sexp2Exp (SList lst) = do
     last <- sexp2Exp (last lst)
     return $ EApp init last
 
-sexp2Exp _ = Left "Syntax Error : Ill formed Sexp"
+{-sexp2Exp _ = Left "Syntax Error : Ill formed Sexp"-}
 
 
 ---------------------------------------------------------------------------
