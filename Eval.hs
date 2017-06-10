@@ -28,6 +28,7 @@ data Exp = EInt Int
          | EVar Symbol
          | EApp Exp Exp
          | ELam Symbol Type Exp
+         | ELet [(Symbol, Type, Exp)] Exp
          deriving (Show, Eq)
 
 data Value = VInt Int
@@ -80,7 +81,7 @@ sexp2type _ = Left "Ill formed type"
 reservedKeywords :: [Symbol]
 reservedKeywords = ["lambda", "let", "case", "data", "Erreur"]
 
-sexp2Exp :: Sexp -> Either Error  Exp
+sexp2Exp :: Sexp -> Either Error Exp
 sexp2Exp (SNum x) = Right $ EInt x
 sexp2Exp (SSym ident) | ident `elem` reservedKeywords
   = Left $ ident ++ " is a reserved keyword"
@@ -93,6 +94,18 @@ sexp2Exp (SList [SSym "lambda", SList (x : xs), body]) =
     let body' = SList [SSym "lambda", SList xs, body]
      in sexp2Exp (SList [SSym "lambda", SList [x], body'])
 sexp2Exp (SList [SSym "lambda", SList [], _]) = Left "Syntax Error : No parameter"
+sexp2Exp (SList [SSym "let", SList (x : xs), body]) = do
+  body' <- sexp2Exp body
+  args' <- makeArgs [] (x : xs)
+  return $ ELet args' body'
+      where makeArgs :: [(Symbol, Type, Exp)] -> [Sexp] -> Either Error [(Symbol, Type, Exp)]
+            makeArgs env [] = Right env
+            makeArgs env (SList [SSym var, t, exp] : xs) = do
+                t' <- sexp2type t
+                exp' <- sexp2Exp exp
+                args <- makeArgs ((var, t', exp') : env) xs
+                return args
+sexp2Exp (SList [SSym "let", SList [], _]) = Left "Syntax Error : No parameter"
 
 sexp2Exp (SList [func, arg]) = do
   func' <- sexp2Exp func
@@ -104,7 +117,7 @@ sexp2Exp (SList lst) = do
     last <- sexp2Exp (last lst)
     return $ EApp init last
 
-{-sexp2Exp _ = Left "Syntax Error : Ill formed Sexp"-}
+sexp2Exp _ = Left "Syntax Error : Ill formed Sexp"
 
 
 ---------------------------------------------------------------------------
@@ -130,7 +143,7 @@ eval env (EApp exp1 exp2) =
 
 eval env (ELam sym typ exp) = VLam sym exp env
 
-{-eval _ _ = error "eval"-}
+eval _ _ = error "eval"
 
 ---------------------------------------------------------------------------
 -- Fonction pour la vérification de type
@@ -155,11 +168,11 @@ typeCheck env (EApp exp1 exp2) = do
     exp1Type <- typeCheck env exp1
     exp2Type <- typeCheck env exp2
     case exp1Type of
-      TArrow t1 t2 | t1 == exp2Type -> Right t2
+      t1 `TArrow` t2 | t1 == exp2Type -> Right t2
       _ -> Left "EApp"
 
 typeCheck env (ELam sym t1 exp) = do
     t2 <- typeCheck ((sym, t1) : env) exp
-    return $ TArrow t1 t2
+    return $ t1 `TArrow` t2
 
-{-typeCheck _ _ = error "typeCheck"-}
+typeCheck _ _ = error "typeCheck"
