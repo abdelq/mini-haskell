@@ -103,8 +103,7 @@ sexp2Exp (SList [SSym "let", SList (x : xs), body]) = do
             makeArgs env (SList [SSym var, t, exp] : xs) = do
                 t' <- sexp2type t
                 exp' <- sexp2Exp exp
-                args <- makeArgs ((var, t', exp') : env) xs
-                return args
+                makeArgs ((var, t', exp') : env) xs
 sexp2Exp (SList [SSym "let", SList [], _]) = Left "Syntax Error : No parameter"
 
 sexp2Exp (SList [func, arg]) = do
@@ -142,6 +141,10 @@ eval env (EApp exp1 exp2) =
           VLam sym exp env -> eval ((sym, v2) : env) exp
 
 eval env (ELam sym typ exp) = VLam sym exp env
+
+eval env (ELet args body) =
+    let env' = map (\(var, _, exp) -> (var, eval env' exp)) args ++ env
+     in eval env' body
 
 eval _ _ = error "eval"
 
