@@ -3,7 +3,7 @@
 -- Vous avez à modifier / compléter les fonctions de ce fichier
 ---------------------------------------------------------------------------
 
-module Eval where
+module Eval (module Eval) where
 
 import Parseur
 
@@ -116,7 +116,7 @@ sexp2Exp (SList lst) = do
     last <- sexp2Exp (last lst)
     return $ EApp init last
 
-sexp2Exp _ = Left "Syntax Error : Ill formed Sexp"
+{-sexp2Exp _ = Left "Syntax Error : Ill formed Sexp"-}
 
 
 ---------------------------------------------------------------------------
@@ -146,7 +146,7 @@ eval env (ELet args body) =
     let env' = map (\(var, _, exp) -> (var, eval env' exp)) args ++ env
      in eval env' body
 
-eval _ _ = error "eval"
+{-eval _ _ = error "eval"-}
 
 ---------------------------------------------------------------------------
 -- Fonction pour la vérification de type
@@ -178,4 +178,10 @@ typeCheck env (ELam sym t1 exp) = do
     t2 <- typeCheck ((sym, t1) : env) exp
     return $ t1 `TArrow` t2
 
-typeCheck _ _ = error "typeCheck"
+typeCheck env (ELet args body) =
+    let env' = map (\(var, t, exp) -> (var, t)) args ++ env
+     in do
+         args' <- mapM (\(var, t, exp) -> typeCheck env' exp) args
+         typeCheck env' body
+
+{-typeCheck _ _ = error "typeCheck"-}
