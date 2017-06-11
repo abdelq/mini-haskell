@@ -40,7 +40,6 @@ instance Show Value where
 
 instance Eq Value where
   (VInt n1) == (VInt n2) = n1 == n2
-  -- Impossible de comparer fonctions et primitives
   _ == _ = False
 
 ---------------------------------------------------------------------------
@@ -49,10 +48,7 @@ instance Eq Value where
 ---------------------------------------------------------------------------
 type Error = String
 
----------------------------------------------------------------------------
--- L'environnement d'exécution
--- Une simple liste qui contient des identifiants associés à des valeurs
----------------------------------------------------------------------------
+-- Environnements
 type Env = [(Symbol, Value)]
 
 env0 :: Env
@@ -61,6 +57,12 @@ env0 = [("+", prim (+)),
         ("*", prim (*))]
   where prim op =
           VPrim (\ (VInt x) -> VPrim (\ (VInt y) -> VInt (x `op` y)))
+
+type Tenv = [(Symbol, Type)]
+tenv0 :: Tenv
+tenv0 = [("+", TArrow TInt (TArrow TInt TInt)),
+         ("-", TArrow TInt (TArrow TInt TInt)),
+         ("*", TArrow TInt (TArrow TInt TInt))]
 
 ---------------------------------------------------------------------------
 -- Fonction de converstion des Sexp en Expressions (Exp)
@@ -142,12 +144,6 @@ eval env (ELet args body) =
 {-eval _ _ = error "eval"-}
 
 -- Vérification de type
-type Tenv = [(Symbol, Type)]
-tenv0 :: Tenv
-tenv0 = [("+", TArrow TInt (TArrow TInt TInt)),
-         ("-", TArrow TInt (TArrow TInt TInt)),
-         ("*", TArrow TInt (TArrow TInt TInt))]
-
 lookupType :: [(Symbol, Type)] -> Symbol -> Either Error Type
 lookupType [] sym = Left $ "Not in scope variable : " ++ show sym
 lookupType ((s,v) : _) sym | s == sym = Right v
