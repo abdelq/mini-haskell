@@ -1,16 +1,16 @@
----------------------------------------------------------------------------
--- Fichier principal pour le TP 1
--- Vous avez à modifier / compléter les fonctions de ce fichier
----------------------------------------------------------------------------
+{-|
+Copyright : (c) Vincent Archambault-Bouffard, 2017
+                Abdelhakim Qbaich, 2017
+                David Boivin, 2017
+License   : MIT
+-}
 
 module Eval (module Eval) where
 
 import Parseur
 
 
----------------------------------------------------------------------------
--- Le datatype des types
----------------------------------------------------------------------------
+-- Types
 data Type = TInt
           | TArrow Type Type
           deriving (Eq)
@@ -21,9 +21,7 @@ instance Show Type where
     where showParen' x@(TArrow _ _) = "(" ++ show x ++ ")"
           showParen' x = show x
 
----------------------------------------------------------------------------
--- Le datatype des expressions et valeurs
----------------------------------------------------------------------------
+-- Expressions
 data Exp = EInt Int
          | EVar Symbol
          | EApp Exp Exp
@@ -31,6 +29,7 @@ data Exp = EInt Int
          | ELet [(Symbol, Type, Exp)] Exp
          deriving (Show, Eq)
 
+-- Valeurs
 data Value = VInt Int
            | VLam Symbol Exp Env
            | VPrim (Value -> Value)
@@ -50,7 +49,6 @@ instance Eq Value where
 ---------------------------------------------------------------------------
 type Error = String
 
-
 ---------------------------------------------------------------------------
 -- L'environnement d'exécution
 -- Une simple liste qui contient des identifiants associés à des valeurs
@@ -63,8 +61,6 @@ env0 = [("+", prim (+)),
         ("*", prim (*))]
   where prim op =
           VPrim (\ (VInt x) -> VPrim (\ (VInt y) -> VInt (x `op` y)))
-
-
 
 ---------------------------------------------------------------------------
 -- Fonction de converstion des Sexp en Expressions (Exp)
@@ -120,12 +116,7 @@ sexp2Exp (SList lst) = do
 
 {-sexp2Exp _ = Left "Syntax Error : Ill formed Sexp"-}
 
-
----------------------------------------------------------------------------
--- Fonction d'évaluation
--- Vous allez devoir modifier eval
----------------------------------------------------------------------------
-
+-- Évaluation
 lookupVar :: [(Symbol, Value)] -> Symbol -> Value
 lookupVar [] sym = error "Oups ..."
 lookupVar ((s,v) : _) sym | s == sym = v
@@ -150,10 +141,7 @@ eval env (ELet args body) =
 
 {-eval _ _ = error "eval"-}
 
----------------------------------------------------------------------------
--- Fonction pour la vérification de type
--- Vous allez devoir modifier typeCheck
----------------------------------------------------------------------------
+-- Vérification de type
 type Tenv = [(Symbol, Type)]
 tenv0 :: Tenv
 tenv0 = [("+", TArrow TInt (TArrow TInt TInt)),
@@ -182,8 +170,7 @@ typeCheck env (ELam sym t1 exp) = do
 
 typeCheck env (ELet args body) =
     let env' = map (\(var, t, exp) -> (var, t)) args ++ env
-     in do
-         args' <- mapM (\(var, t, exp) -> typeCheck env' exp) args
-         typeCheck env' body
+     in do args' <- mapM (\(var, t, exp) -> typeCheck env' exp) args
+           typeCheck env' body
 
 {-typeCheck _ _ = error "typeCheck"-}
