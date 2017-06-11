@@ -72,6 +72,11 @@ env0 = [("+", prim (+)),
 ---------------------------------------------------------------------------
 sexp2type :: Sexp -> Either Error Type
 sexp2type (SSym "Int") = Right TInt
+sexp2type (SList (x : SSym "->" : xs)) = do
+  type1 <- sexp2type x
+  type2 <- sexp2type (SList xs)
+  return $ TArrow type1 type2
+sexp2type (SList [x]) = sexp2type x
 sexp2type (SList (x : xs)) = do
   type1 <- sexp2type x
   type2 <- sexp2type (SList xs)
