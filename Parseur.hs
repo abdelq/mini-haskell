@@ -3,11 +3,12 @@
 -- Vous n'avez pas à modifier ce fichier
 ---------------------------------------------------------------------------
 
-module Parseur where
+module Parseur (module Parseur) where
 
 import Data.Char
 import Text.ParserCombinators.Parsec
 import Text.Parsec.Char
+import Control.Monad
 
 
 type Symbol = String
@@ -21,7 +22,7 @@ instance Show Sexp where
   show (SNum n) = show n
   show (SList xs) =
     let showTail [] = ")"
-        showTail (x : []) = show x ++ ")"
+        showTail [x] = show x ++ ")"
         showTail (y : ys) = show y ++ " " ++ showTail ys
     in "(" ++ showTail xs
 
@@ -44,11 +45,11 @@ pSexp = whiteSpace *>
 pComment :: Parser ()
 pComment = do
   _ <- try $ string "--"
-  _ <- manyTill anyChar ((endOfLine >> return ()) <|> eof)
+  _ <- manyTill anyChar (Control.Monad.void endOfLine <|> eof)
   return ()
 
 whiteSpace :: Parser ()
-whiteSpace = many ((space >> return ()) <|> pComment) >> return ()
+whiteSpace = Control.Monad.void (many (Control.Monad.void space <|> pComment))
 
 pAtom :: Parser Sexp
 pAtom = do
@@ -58,10 +59,10 @@ pAtom = do
              _ -> SSym s)
 
 pSymchar :: Parser Char
-pSymchar    = alphaNum <|> satisfy (\c -> c `elem` "!@$%^&*_+-=:|/?<>")
+pSymchar    = alphaNum <|> satisfy (`elem` "!@$%^&*_+-=:|/?<>")
 
 integer :: Parser Int
-integer = (do _ <- (try $ char '-')
+integer = (do _ <- try $ char '-'
               n <- natural
               return (- n))
           <|> natural

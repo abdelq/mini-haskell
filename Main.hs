@@ -4,7 +4,7 @@
 -- Fournit une boucle d'évaluation et les unittests
 ---------------------------------------------------------------------------
 
-module Main where
+module Main (module Main) where
 
 import Data.List
 import Data.Char
@@ -34,9 +34,9 @@ run sourceCode = do
 runIO :: String -> IO ()
 runIO line = catch
   (case run line of
-    Left err -> putStrLn $ show err
+    Left err -> print err
     Right (v, t) -> do
-      putStrLn $ (show v ++ " :: " ++ show t)
+      putStrLn (show v ++ " :: " ++ show t)
       return ())
   (\e -> putStrLn $ displayException (e :: ErrorCall))
   
@@ -52,7 +52,7 @@ repl = runInputT defaultSettings loop
     case input of
       Nothing -> outputStrLn "Leaving Mini Haskell"
       Just input | trim input == ":q" -> outputStrLn "Leaving Mini Haskell"
-      Just input -> (liftIO $ runIO input) >> loop
+      Just input -> liftIO (runIO input) >> loop
 
   trim = dropWhileEnd isSpace . dropWhile isSpace
 
@@ -65,7 +65,7 @@ repl = runInputT defaultSettings loop
 unittests :: String -> IO ()
 unittests file = do
   lines <- readFile file
-  sexps <- either (\err -> (putStrLn $ show err) >> return [])
+  sexps <- either (\err -> print err >> return [])
                   return
                   (parse pManySexp "" lines)
   (nbtest, nbGood, nbBad) <- runalltest sexps
@@ -76,10 +76,10 @@ unittests file = do
              ++ show nbBad ++ " KO.")
 
   where runalltest :: [Sexp] -> IO (Int, Int, Int)
-        runalltest xs = foldM runtest (0, 0, 0) xs
+        runalltest = foldM runtest (0, 0, 0)
 
          -- Cas où l'on s'attend à une Erreur
-        runtest (i, g, b) (SList (test : (SSym "Erreur") : [])) = do
+        runtest (i, g, b) (SList [test, SSym "Erreur"]) = do
                 let i' = i + 1
                 (g', b') <- catch
                             (let x = sexp2Exp test >>= typeCheck tenv0
@@ -94,7 +94,7 @@ unittests file = do
                 return  (i', g + g', b + b')
 
           -- Cas où l'on compare deux résultats
-        runtest (i, g, b) (SList (test : solution : [])) = do
+        runtest (i, g, b) (SList [test, solution]) = do
           let i' = i + 1
           (g', b') <- catch 
                  (let x = do
