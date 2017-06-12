@@ -13,6 +13,7 @@ import Parseur
 -- Types
 data Type = TInt
           | TArrow Type Type
+          | TData Symbol
           deriving (Eq)
 
 instance Show Type where
@@ -20,6 +21,7 @@ instance Show Type where
   show (TArrow t1 t2) = showParen' t1 ++ " -> " ++ show t2
     where showParen' x@(TArrow _ _) = "(" ++ show x ++ ")"
           showParen' x = show x
+  show (TData sym) = sym
 
 -- Expressions
 data Exp = EInt Int
@@ -27,15 +29,18 @@ data Exp = EInt Int
          | EApp Exp Exp
          | ELam Symbol Type Exp
          | ELet [(Symbol, Type, Exp)] Exp
+         | EData [Value] Exp
          deriving (Show, Eq)
 
 -- Valeurs
 data Value = VInt Int
            | VLam Symbol Exp Env
            | VPrim (Value -> Value)
+           | VData Type [Symbol]
 
 instance Show Value where
   show (VInt n) = show n
+  show (VData t s) = show t -- TODO
   show _ = "<function>"
 
 instance Eq Value where
@@ -70,6 +75,7 @@ tenv0 = [("+", TArrow TInt (TArrow TInt TInt)),
 ---------------------------------------------------------------------------
 sexp2type :: Sexp -> Either Error Type
 sexp2type (SSym "Int") = Right TInt
+{-sexp2type (SSym sym) = Right $ TData sym-} -- TODO
 sexp2type (SList [x]) = sexp2type x
 sexp2type (SList (SSym "->" : xs)) = sexp2type (SList xs)
 sexp2type (SList (x : xs)) = do
@@ -86,6 +92,7 @@ sexp2Exp (SNum x) = Right $ EInt x
 sexp2Exp (SSym ident) | ident `elem` reservedKeywords
   = Left $ ident ++ " is a reserved keyword"
 sexp2Exp (SSym ident) = Right $ EVar ident
+
 sexp2Exp (SList [SSym "lambda", SList [SList [SSym var, t]], body]) = do
   body' <- sexp2Exp body
   t' <- sexp2type t
@@ -94,6 +101,7 @@ sexp2Exp (SList [SSym "lambda", SList (x : xs), body]) =
     let body' = SList [SSym "lambda", SList xs, body]
      in sexp2Exp (SList [SSym "lambda", SList [x], body'])
 sexp2Exp (SList [SSym "lambda", SList [], _]) = Left "Syntax Error : No parameter"
+
 sexp2Exp (SList [SSym "let", SList (x : xs), body]) = do
   body' <- sexp2Exp body
   args' <- makeArgs [] (x : xs)
@@ -106,6 +114,17 @@ sexp2Exp (SList [SSym "let", SList (x : xs), body]) = do
                 makeArgs ((var, t', exp') : env) xs
 sexp2Exp (SList [SSym "let", SList [], _]) = Left "Syntax Error : No parameter"
 
+-- TODO sexp2Exp data
+sexp2Exp (SList [SSym "data", SList (x : xs), body]) = do
+  body' <- sexp2Exp body
+  types' <- makeTypes [] (x : xs)
+  error $ show $ EData types' body'
+      where makeTypes :: [Value] -> [Sexp] -> Either Error [Value]
+            makeTypes env [] = Right env
+            makeTypes env (SList (SSym sym : ys) : xs) = do
+                error $ show $ VData (TData sym) []
+sexp2Exp (SList [SSym "data", SList [], _]) = Left "Syntax Error : No parameter"
+
 sexp2Exp (SList [func, arg]) = do
   func' <- sexp2Exp func
   arg' <- sexp2Exp arg
@@ -116,7 +135,7 @@ sexp2Exp (SList lst) = do
     last <- sexp2Exp (last lst)
     return $ EApp init last
 
--- sexp2Exp _ = Left "Syntax Error : Ill formed Sexp"
+{-sexp2Exp _ = Left "Syntax Error : Ill formed Sexp"-}
 
 -- Évaluation
 lookupVar :: [(Symbol, Value)] -> Symbol -> Value
@@ -140,6 +159,8 @@ eval env (ELam sym typ exp) = VLam sym exp env
 eval env (ELet args body) =
     let env' = map (\(var, _, exp) -> (var, eval env' exp)) args ++ env
      in eval env' body
+
+-- TODO eval EData
 
 {-eval _ _ = error "eval"-}
 
@@ -168,5 +189,7 @@ typeCheck env (ELet args body) =
     let env' = map (\(var, t, exp) -> (var, t)) args ++ env
      in do args' <- mapM (\(var, t, exp) -> typeCheck env' exp) args
            typeCheck env' body
+
+-- TODO typeCheck EData
 
 {-typeCheck _ _ = error "typeCheck"-}
