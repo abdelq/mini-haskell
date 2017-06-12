@@ -116,7 +116,7 @@ sexp2Exp (SList lst) = do
     last <- sexp2Exp (last lst)
     return $ EApp init last
 
-{-sexp2Exp _ = Left "Syntax Error : Ill formed Sexp"-}
+-- sexp2Exp _ = Left "Syntax Error : Ill formed Sexp"
 
 -- Évaluation
 lookupVar :: [(Symbol, Value)] -> Symbol -> Value

@@ -1,3 +1,14 @@
+-- TODO 
+(((2)2) Erreur)
+(( + 1 ) Erreur)
+
+-- TODO Meme variable
+((let ((x Int 2)
+       (x Int 3))
+       ( + x x)) Erreur)
+
+
+
 (((+ 1) 2)
  3)
 
@@ -7,6 +18,14 @@
 (((- 1) 2)
  -1)
 
+((( + + ) 2 ) Erreur)
+(((2 3) +) Erreur)
+
+
+
+(((/ 4) 2) Erreur)
+
+ 
 (((lambda ((x Int)) x) 4)
   4)
 
@@ -19,9 +38,22 @@
 ((lambda () 5)
  Erreur) 
 
+-- Body manquant
+(((lambda (x Int) )5) Erreur)
+
+-- Mauvais symbol
+(((lambda ((x Int)) (+ y 1) )4 ) Erreur)
+
+-- Lambda dans lambda
+(((lambda ((x Int) (y Int))
+((lambda ((y Int) (x Int)) (+ x y)) x y)) 3 4) 7)
+
 -- Sucre syntaxique
 (((lambda ((x Int) (y Int)) (+ x y)) 6 8)
  14)
+
+(( + (+ 2 3) 4) 9)
+(( + 1 2 3) Erreur)
 
 -- Deux paramètres du même nom
 (((lambda ((x Int) (x Int)) (+ x y)) 6 8)
@@ -55,6 +87,18 @@
        (y Int 7))
      (+ x y))
  14)
+
+--let dans un lambda
+(((lambda ((x Int))
+(let ((y Int 5))( + x y))) 4) 9) 
+
+
+-- Let dans let
+((let (( x Int 5)
+       ( y Int 6))
+       ( let (( z Int 2)
+              ( w Int 1))
+              (+ (+ (+ z w) y) x)))14)
 
 ((let ((x (Int -> Int) (lambda ((x Int)) (+ x x)))
        (y Int 3))
