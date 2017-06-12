@@ -1,6 +1,78 @@
--- TODO 
-(((2)2) Erreur)
-(( + 1 ) Erreur)
+-- Implanter un langage minimaliste
+
+((+)
+ Erreur)
+
+((1)
+ Erreur)
+
+{-((+ 1)
+ <function>)-}
+
+((1 +)
+ Erreur)
+
+((+ +)
+ Erreur)
+
+((1 1)
+ Erreur)
+
+(((+ 2) 4)
+ 6)
+
+(((- 2) 4)
+ -2)
+
+(((* 2) 4)
+ 8)
+
+(((/ 2) 4)
+ Erreur)
+
+(((2 +) 4)
+ Erreur)
+
+(((2 4) +)
+ Erreur)
+
+((lambda () 42)
+ Erreur)
+
+(((lambda (()) x) 42)
+ Erreur)
+
+(((lambda () x) 42)
+ Erreur)
+
+(((lambda ((x Int)) ()) 42)
+ Erreur)
+
+(((lambda ((x Int)) ) 42)
+ Erreur)
+
+(((lambda ((x Int)) x) 42)
+ 42)
+
+((((lambda ((x Int))
+     (lambda ((y Int)) ((+ x) y)))
+   6) 8)
+ 14)
+
+
+
+
+
+
+
+((let ((x Int 5)
+       (y Int 8))
+   (+ x y))
+ 13)
+
+
+
+
 
 -- TODO Meme variable
 ((let ((x Int 2)
@@ -9,34 +81,9 @@
 
 
 
-(((+ 1) 2)
- 3)
 
-(((* 1) 2)
- 2)
-
-(((- 1) 2)
- -1)
-
-((( + + ) 2 ) Erreur)
-(((2 3) +) Erreur)
-
-
-
-(((/ 4) 2) Erreur)
-
- 
-(((lambda ((x Int)) x) 4)
-  4)
-
-((((lambda ((x Int))
-      (lambda ((y Int)) ((+ x) y)))
-    6) 8)
-  14)
 
 -- Paramètre manquant
-((lambda () 5)
- Erreur) 
 
 -- Body manquant
 (((lambda (x Int) )5) Erreur)
@@ -67,10 +114,6 @@
 ((let ((x Int 5)) (+ x x))
  10)
 
-((let ((x Int 5)
-       (y Int 8))
-     (+ x y))
- 13)
 
 -- Ne doit pas produire pas de boucle infinie
 ((let ((x Int y)
@@ -107,8 +150,8 @@
 
 -- data
 ((data ((Bool True False))
-   (let ((x Bool True)) x))
- (data ((Bool True False)) True)) 
+       (let ((x Bool True)) x))
+ (data ((Bool True False)) True))
 
 -- Int ne peut pas être redéfini
 ((data ((Int A B)) A)
@@ -116,16 +159,17 @@
 
 -- Data doit être une déclaration top level
 ((data ((Bool True False))
-   (let ((x Bool True))
-     (data ((Wrong A B)) 5)))
-  Erreur)
+       (let ((x Bool True))
+         (data ((Wrong A B)) 5)))
+ Erreur)
 
 ((data ((Bool True False)
         (ListInt Nil (Cons Int ListInt)))
-   (let ((x Bool True)
-         (if (Bool -> Bool)
-	     (lambda ((x Bool))
-	        (case x ((True False) (False True))))))
-      (if x)))
-  (data ((Bool True False)) False))
+       (let ((x Bool True)
+             (if (Bool -> Bool)
+               (lambda ((x Bool))
+                 (case x ((True False) (False True))))))
+         (if x)))
+ (data ((Bool True False)) False))
 
+-- vim: filetype=lisp
