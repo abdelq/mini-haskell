@@ -75,7 +75,7 @@ tenv0 = [("+", TArrow TInt (TArrow TInt TInt)),
 ---------------------------------------------------------------------------
 sexp2type :: Sexp -> Either Error Type
 sexp2type (SSym "Int") = Right TInt
-{-sexp2type (SSym sym) = Right $ TData sym-} -- TODO
+sexp2type (SSym sym) = Right (TData sym)
 sexp2type (SList [x]) = sexp2type x
 sexp2type (SList (SSym "->" : xs)) = sexp2type (SList xs)
 sexp2type (SList (x : xs)) = do
@@ -122,7 +122,11 @@ sexp2Exp (SList [SSym "data", SList (x : xs), body]) = do
       where makeTypes :: [Value] -> [Sexp] -> Either Error [Value]
             makeTypes env [] = Right env
             makeTypes env (SList (SSym sym : ys) : xs) = do
-                error $ show $ VData (TData sym) []
+              typ' <- sexp2type (SSym sym)
+              error $ show $ makeTypes (VData (typ') (makeSym [] ys):env) xs
+                  where makeSym :: [Symbol] -> [Sexp] -> [Symbol]
+                        makeSym env [] = env
+                        makeSym env ((SSym x) :xs) = makeSym (x:env) xs
 sexp2Exp (SList [SSym "data", SList [], _]) = Left "Syntax Error : No parameter"
 
 sexp2Exp (SList [func, arg]) = do
