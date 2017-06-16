@@ -36,11 +36,12 @@ data Exp = EInt Int
 data Value = VInt Int
            | VLam Symbol Exp Env
            | VPrim (Value -> Value)
-           | VData Type [Symbol]
+           | VCons Symbol [Value]
 
 instance Show Value where
   show (VInt n) = show n
-  show (VData t s) = show t -- TODO
+  show (VCons s []) = show s
+  show (VCons s vs) = show s ++ " " ++ show vs
   show _ = "<function>"
 
 instance Eq Value where
@@ -89,8 +90,8 @@ reservedKeywords = ["lambda", "let", "case", "data", "Erreur"]
 
 sexp2Exp :: Sexp -> Either Error Exp
 sexp2Exp (SNum x) = Right $ EInt x
-sexp2Exp (SSym ident) | ident `elem` reservedKeywords
-  = Left $ ident ++ " is a reserved keyword"
+sexp2Exp (SSym ident) | ident `elem` reservedKeywords =
+    Left $ ident ++ " is a reserved keyword"
 sexp2Exp (SSym ident) = Right $ EVar ident
 
 sexp2Exp (SList [SSym "lambda", SList [SList [SSym var, t]], body]) = do
@@ -100,7 +101,6 @@ sexp2Exp (SList [SSym "lambda", SList [SList [SSym var, t]], body]) = do
 sexp2Exp (SList [SSym "lambda", SList (x : xs), body]) =
     let body' = SList [SSym "lambda", SList xs, body]
      in sexp2Exp (SList [SSym "lambda", SList [x], body'])
-sexp2Exp (SList [SSym "lambda", SList [], _]) = Left "Syntax Error : No parameter"
 
 sexp2Exp (SList [SSym "let", SList (x : xs), body]) = do
   body' <- sexp2Exp body
@@ -112,22 +112,22 @@ sexp2Exp (SList [SSym "let", SList (x : xs), body]) = do
                 t' <- sexp2type t
                 exp' <- sexp2Exp exp
                 makeArgs ((var, t', exp') : env) xs
-sexp2Exp (SList [SSym "let", SList [], _]) = Left "Syntax Error : No parameter"
 
--- TODO sexp2Exp data
 sexp2Exp (SList [SSym "data", SList (x : xs), body]) = do
   body' <- sexp2Exp body
-  types' <- makeTypes [] (x : xs)
-  error $ show $ EData types' body'
-      where makeTypes :: [Value] -> [Sexp] -> Either Error [Value]
-            makeTypes env [] = Right env
-            makeTypes env (SList (SSym sym : ys) : xs) = do
-              typ' <- sexp2type (SSym sym)
-              error $ show $ makeTypes (VData (typ') (makeSym [] ys):env) xs
-                  where makeSym :: [Symbol] -> [Sexp] -> [Symbol]
-                        makeSym env [] = env
-                        makeSym env ((SSym x) :xs) = makeSym (x:env) xs
-sexp2Exp (SList [SSym "data", SList [], _]) = Left "Syntax Error : No parameter"
+  cons <- makeCons [] (x : xs)
+  return $ EData cons body'
+      where makeCons :: [Value] -> [Sexp] -> Either Error [Value]
+            makeCons env [] = Right env
+            makeCons env (SSym x : xs) = makeCons (VCons x [] : env) xs
+            makeCons env (SList (SSym sym : ys) : xs) | sym /= "Int" = do
+                cons' <- makeCons [] ys
+                makeCons (VCons sym cons' : env) xs
+            makeCons _ _ = Left "sexp2Exp data"
+
+sexp2Exp (SList [SSym sym, SList [], _]) |
+    sym `elem` ["lambda", "let", "data"] =
+        Left "Syntax Error : No parameter"
 
 sexp2Exp (SList [func, arg]) = do
   func' <- sexp2Exp func
@@ -139,7 +139,7 @@ sexp2Exp (SList lst) = do
     last <- sexp2Exp (last lst)
     return $ EApp init last
 
-{-sexp2Exp _ = Left "Syntax Error : Ill formed Sexp"-}
+sexp2Exp _ = Left "Syntax Error : Ill formed Sexp"
 
 -- Évaluation
 lookupVar :: [(Symbol, Value)] -> Symbol -> Value
@@ -164,9 +164,11 @@ eval env (ELet args body) =
     let env' = map (\(var, _, exp) -> (var, eval env' exp)) args ++ env
      in eval env' body
 
--- TODO eval EData
+eval env (EData (VCons sym vs : xs) body) =
+    let env' = map (\(VCons x y) -> (x, VCons x y)) vs ++ env
+     in eval env' body
 
-{-eval _ _ = error "eval"-}
+eval _ _ = error "eval"
 
 -- Vérification de type
 lookupType :: [(Symbol, Type)] -> Symbol -> Either Error Type
@@ -194,6 +196,8 @@ typeCheck env (ELet args body) =
      in do args' <- mapM (\(var, t, exp) -> typeCheck env' exp) args
            typeCheck env' body
 
--- TODO typeCheck EData
+typeCheck env (EData (VCons sym vs : xs) body) =
+    let env' = map (\(VCons x []) -> (x, TData sym)) vs ++ env in
+        typeCheck env' body
 
-{-typeCheck _ _ = error "typeCheck"-}
+typeCheck _ _ = error "typeCheck"
