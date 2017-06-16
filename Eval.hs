@@ -108,10 +108,12 @@ sexp2Exp (SList [SSym "let", SList (x : xs), body]) = do
   return $ ELet args' body'
       where makeArgs :: [(Symbol, Type, Exp)] -> [Sexp] -> Either Error [(Symbol, Type, Exp)]
             makeArgs env [] = Right env
-            makeArgs env (SList [SSym var, t, exp] : xs) = do
+            makeArgs env (SList [SSym var, t, exp] : xs) |
+                var `notElem` (\(a, _, _) -> a) (unzip3 env) = do
                 t' <- sexp2type t
                 exp' <- sexp2Exp exp
                 makeArgs ((var, t', exp') : env) xs
+            makeArgs _ _ = Left "sexp2Exp let"
 sexp2Exp (SList [SSym "let", SList [], _]) = Left "Syntax Error : No parameter"
 
 -- TODO sexp2Exp data
@@ -123,10 +125,10 @@ sexp2Exp (SList [SSym "data", SList (x : xs), body]) = do
             makeTypes env [] = Right env
             makeTypes env (SList (SSym sym : ys) : xs) = do
               typ' <- sexp2type (SSym sym)
-              error $ show $ makeTypes (VData (typ') (makeSym [] ys):env) xs
+              error $ show $ makeTypes (VData typ' (makeSym [] ys):env) xs
                   where makeSym :: [Symbol] -> [Sexp] -> [Symbol]
                         makeSym env [] = env
-                        makeSym env ((SSym x) :xs) = makeSym (x:env) xs
+                        makeSym env (SSym x :xs) = makeSym (x:env) xs
 sexp2Exp (SList [SSym "data", SList [], _]) = Left "Syntax Error : No parameter"
 
 sexp2Exp (SList [func, arg]) = do
@@ -134,6 +136,7 @@ sexp2Exp (SList [func, arg]) = do
   arg' <- sexp2Exp arg
   return $ EApp func' arg'
 
+-- TODO foldl (low priority)
 sexp2Exp (SList lst) = do
     init <- sexp2Exp (SList (init lst))
     last <- sexp2Exp (last lst)
@@ -183,7 +186,7 @@ typeCheck env (EApp exp1 exp2) = do
     exp2Type <- typeCheck env exp2
     case exp1Type of
       t1 `TArrow` t2 | t1 == exp2Type -> Right t2
-      _ -> Left "EApp"
+      _ -> Left "typeCheck EApp"
 
 typeCheck env (ELam sym t1 exp) = do
     t2 <- typeCheck ((sym, t1) : env) exp
@@ -191,8 +194,7 @@ typeCheck env (ELam sym t1 exp) = do
 
 typeCheck env (ELet args body) =
     let env' = map (\(var, t, exp) -> (var, t)) args ++ env
-     in do args' <- mapM (\(var, t, exp) -> typeCheck env' exp) args
-           typeCheck env' body
+     in mapM_ (\(var, t, exp) -> typeCheck env' exp) args >> typeCheck env' body
 
 -- TODO typeCheck EData
 
