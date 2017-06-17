@@ -120,6 +120,7 @@ sexp2Exp (SList [SSym "data", SList (x : xs), body]) = do
       where makeCons :: [Value] -> [Sexp] -> Either Error [Value]
             makeCons env [] = Right env
             makeCons env (SSym x : xs) = makeCons (VCons x [] : env) xs
+            makeCons env (SNum x : xs) = makeCons (VInt x : env) xs
             makeCons env (SList (SSym sym : ys) : xs) | sym /= "Int" = do
                 cons' <- makeCons [] ys
                 makeCons (VCons sym cons' : env) xs
@@ -139,7 +140,7 @@ sexp2Exp (SList lst) = do
     last <- sexp2Exp (last lst)
     return $ EApp init last
 
-sexp2Exp _ = Left "Syntax Error : Ill formed Sexp"
+{-sexp2Exp _ = Left "Syntax Error : Ill formed Sexp"-}
 
 -- Évaluation
 lookupVar :: [(Symbol, Value)] -> Symbol -> Value
@@ -196,8 +197,8 @@ typeCheck env (ELet args body) =
      in do args' <- mapM (\(var, t, exp) -> typeCheck env' exp) args
            typeCheck env' body
 
-typeCheck env (EData (VCons sym vs : xs) body) =
-    let env' = map (\(VCons x []) -> (x, TData sym)) vs ++ env in
+typeCheck env (EData (VCons t vs : xs) body) =
+    let env' = map (\(VCons x []) -> (x, TData t)) vs ++ env in
         typeCheck env' body
 
 typeCheck _ _ = error "typeCheck"
