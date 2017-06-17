@@ -47,9 +47,12 @@ fiabilité nous avons rajouté des tests unitaires. Les tests qui
 sont échoués sont les expressions qui manque des éléments. Comme
 par exemple quand il n'y a aucun élément entre
 parenthèses. Malheureusement ces erreurs doivent être gérées
-avant l'execution de `sexp2Exp`. Les test comportants
-l'implémentation de `case` ont aussi échoués puisque nous n'avons
-pas eu le temps de l'implémenter.
+avant l'execution de `sexp2Exp`. Le premier test du data ne nous donne pas la même réponse que dans le test unitaire. Nore implémentation affiche.
+
+``` "True" :: Bool ``` 
+
+Les test comportants l'implémentation de `case` ont aussi échoués
+puisque nous n'avons pas eu le temps de l'implémenter.
 
 
 # Modification aux _datatypes_ fournis
@@ -76,7 +79,6 @@ Pour implémenter une façon de définir nos propre structure de
 données il nous a fallu rajouter au `datatypes` le `EData`. Voici
 la `data Exp` que nous avons rajouter.
 
-TODO
 ``` EData [Value] Exp ```
 
 Donc avec le `sexp2Exp`on tranforme la structure de données avec
@@ -92,14 +94,19 @@ pouvoir évaluer et retourner une valeur quand on retourne une
 structure de données que nous avons déclaré.  Voici les deux
 ajouts aux structures de données `Type` et `Value`.
 
-``` TData TData Symbol ``` ``` VData Type [Symbol] ```
+``` TData TData Symbol ```
+``` VData Type [Symbol] ```
 
 Nous avons aussi ajouter une façon dont l'interpréteur
 afficherait les valeur `VData`.
 
-``` show (TData sym) = sym ```
+``` show (TData sym) = sym `
 
-TODO
+Malheuresement notre implémentation de `data` n'est pas complète pour
+certain cas. Elle ne regrade pas si un type est déjà définie dans son
+`data` . De plus notre `typeCheck` est non récusif pour le reste de la
+liste. Le `typeCheck` fonctionne mal avec les tuples aussi.
+
 
 ## Le `case`
 
