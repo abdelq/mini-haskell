@@ -52,7 +52,6 @@ avant l'exécution de `sexp2Exp`. Les test comportant
 l'implémentation de `case` ont aussi échoués puisque nous n'avons
 pas eu le temps de l'implémenter.
 
-
 # Modification aux _datatypes_ fournis
 
 ## `Data Exp`
@@ -77,7 +76,6 @@ Pour implémenter une façon de définir nos propre structure de
 données il nous a fallu rajouter au `datatypes` le `EData`. Voici
 la `data Exp` que nous avons rajouter.
 
-<!--TODO-->
 `EData [Value] Exp`
 
 Donc avec le `sexp2Exp`on transforme la structure de données avec
@@ -101,7 +99,10 @@ afficherait les valeur `VData`.
 
 `show (TData sym) = sym`
 
-<!--TODO-->
+Malheuresement notre implémentation de `data` n'est pas complète pour
+certain cas. Elle ne regrade pas si un type est déjà définie dans son
+`data` . De plus notre `typeCheck` est non récusif pour le reste de la
+liste. Le `typeCheck` fonctionne mal avec les tuples aussi.
 
 ## Le `case`
 
