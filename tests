@@ -6,9 +6,6 @@
 ((1)
  Erreur)
 
-{-((+ 1)
- <function>)-}
-
 ((1 +)
  Erreur)
 
