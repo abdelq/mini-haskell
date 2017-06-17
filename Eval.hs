@@ -137,7 +137,6 @@ sexp2Exp (SList [func, arg]) = do
   arg' <- sexp2Exp arg
   return $ EApp func' arg'
 
--- TODO foldl (low priority)
 sexp2Exp (SList lst) = do
     init <- sexp2Exp (SList (init lst))
     last <- sexp2Exp (last lst)

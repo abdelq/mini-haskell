@@ -1,11 +1,5 @@
 -- Implanter un langage minimaliste
 
-((+)
- Erreur)
-
-((1)
- Erreur)
-
 ((1 +)
  Erreur)
 

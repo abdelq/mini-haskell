@@ -31,7 +31,7 @@ pManySexp = many1 pSexp <* eof
 
 pOneSexp :: Parser Sexp
 pOneSexp = pSexp <* eof
-  
+
 pSexp :: Parser Sexp
 pSexp = whiteSpace *>
         (pAtom <|>
@@ -66,7 +66,7 @@ integer = (do _ <- try $ char '-'
               n <- natural
               return (- n))
           <|> natural
-  
+
 natural :: Parser Int
 natural = do
   digits <- many1 digit

@@ -78,7 +78,7 @@ la `data Exp` que nous avons rajouter.
 
 `EData [Value] Exp`
 
-Donc avec le `sexp2Exp`on transforme la structure de données avec
+Donc avec le `sexp2Exp` on transforme la structure de données avec
 un tableau de valeurs et une expression . La difficulté de cela
 étais surtout de transformer l'entrée pour pouvoir l'utiliser
 efficacement avec `eval` et `typecheck`.  Pour cela nous avons
@@ -91,7 +91,7 @@ pouvoir évaluer et retourner une valeur quand on retourne une
 structure de données que nous avons déclaré.  Voici les deux
 ajouts aux structures de données `Type` et `Value`.
 
-`TData TData Symbol`
+`TData Symbol`
 `VData Type [Symbol]`
 
 Nous avons aussi ajouter une façon dont l'interpréteur
@@ -99,10 +99,11 @@ afficherait les valeur `VData`.
 
 `show (TData sym) = sym`
 
-Malheuresement notre implémentation de `data` n'est pas complète pour
-certain cas. Elle ne regrade pas si un type est déjà définie dans son
-`data` . De plus notre `typeCheck` est non récusif pour le reste de la
-liste. Le `typeCheck` fonctionne mal avec les tuples aussi.
+Malheureusement notre implémentation de `data` n'est pas complète pour
+certain cas. Elle ne regarde pas si un type est déjà définie dans son
+`data` . De plus notre `typeCheck` est non récursive pour le reste de la
+liste. Le `typeCheck` fonctionne mal avec des constructeurs ayant des valeurs
+en nombre plutôt qu'un symbole.
 
 ## Le `case`
 

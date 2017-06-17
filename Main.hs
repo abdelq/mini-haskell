@@ -22,7 +22,7 @@ import Eval
 mapLeft :: (a -> b) -> Either a c -> Either b c
 mapLeft f (Left x) = Left $ f x
 mapLeft _ (Right x) = Right x
-        
+
 run :: String -> Either Error (Value, Type)
 run sourceCode = do
       sexp <- mapLeft show (parse pOneSexp "" sourceCode)
@@ -39,7 +39,7 @@ runIO line = catch
       putStrLn (show v ++ " :: " ++ show t)
       return ())
   (\e -> putStrLn $ displayException (e :: ErrorCall))
-  
+
 -- REPL : Read Eval Print Loop
 -- Vous permet d'évaluer des expressions à l'aide de GHCi,
 -- l'interpréteur de Haskell qui vient avec la Haskell Platform
@@ -105,7 +105,7 @@ unittests file = do
                         tSol <- typeCheck tenv0 expSol
                         let vSol = eval env0 expSol
                         return $ v == vSol
-                   in case x of 
+                   in case x of
                         Left err -> putStrLn ("Test " ++ show i' ++ ": " ++ err) >>
                                     return (0, 1)
                         Right False -> putStrLn ("Test " ++ show i' ++ " failed") >>
@@ -120,6 +120,6 @@ unittests file = do
         runtest (i, g, b) _ = do
             putStrLn ("Test " ++ show i ++ " " ++
                        "ill formed unittest Sexp")
-            return (i + 1, g, b + 1)       
+            return (i + 1, g, b + 1)
 
 main = repl
